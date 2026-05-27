@@ -93,6 +93,7 @@ cat \
 	src/decoder.js \
 	src/mpeg1.js \
 	src/mpeg1-wasm.js \
+	src/mpeg2.js \
 	src/mp2.js \
 	src/mp2-wasm.js \
 	src/webgl.js \

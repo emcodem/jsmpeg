@@ -22,9 +22,10 @@ CanvasRenderer.prototype.destroy = function() {
 	}
 };
 
-CanvasRenderer.prototype.resize = function(width, height) {
+CanvasRenderer.prototype.resize = function(width, height, chromaFormat) {
 	this.width = width|0;
 	this.height = height|0;
+	this.chromaFormat = chromaFormat || 1;
 
 	this.canvas.width = this.width;
 	this.canvas.height = this.height;
@@ -55,15 +56,46 @@ CanvasRenderer.prototype.YCbCrToRGBA = function(y, cb, cr, rgba) {
 		return;
 	}
 
-	// Chroma values are the same for each block of 4 pixels, so we proccess
-	// 2 lines at a time, 2 neighboring pixels each.
-	// I wish we could use 32bit writes to the RGBA buffer instead of writing
-	// each byte separately, but we need the automatic clamping of the RGBA
-	// buffer.
-	
 	var w = ((this.width + 15) >> 4) << 4,
 		w2 = w >> 1;
 
+	if (this.chromaFormat === 2) {
+		// 4:2:2: one chroma row per luma row, half horizontal resolution
+		var yIndex = 0,
+			cIndex = 0,
+			rgbaIndex = 0,
+			ySkip = w - this.width,
+			cSkip = w2 - (this.width >> 1),
+			cols = this.width >> 1;
+
+		var ccb, ccr, r, g, b;
+		for (var row = 0; row < this.height; row++) {
+			for (var col = 0; col < cols; col++) {
+				ccb = cb[cIndex];
+				ccr = cr[cIndex];
+				cIndex++;
+
+				r = (ccb + ((ccb * 103) >> 8)) - 179;
+				g = ((ccr * 88) >> 8) - 44 + ((ccb * 183) >> 8) - 91;
+				b = (ccr + ((ccr * 198) >> 8)) - 227;
+
+				var y1 = y[yIndex++];
+				var y2 = y[yIndex++];
+				rgba[rgbaIndex]   = y1 + r;
+				rgba[rgbaIndex+1] = y1 - g;
+				rgba[rgbaIndex+2] = y1 + b;
+				rgba[rgbaIndex+4] = y2 + r;
+				rgba[rgbaIndex+5] = y2 - g;
+				rgba[rgbaIndex+6] = y2 + b;
+				rgbaIndex += 8;
+			}
+			yIndex += ySkip;
+			cIndex += cSkip;
+		}
+		return;
+	}
+
+	// 4:2:0: process 2 luma rows at a time sharing one chroma row
 	var yIndex1 = 0,
 		yIndex2 = w,
 		yNext2Lines = w + (w - this.width);

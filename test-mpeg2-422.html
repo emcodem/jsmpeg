@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MPEG-2 4:2:2 Test</title>
+  <style>
+    body { background: #111; color: #eee; font-family: monospace; text-align: center; }
+    canvas { display: block; margin: 20px auto; border: 1px solid #444; }
+    #log { text-align: left; max-width: 800px; margin: 0 auto; font-size: 12px; }
+    .controls { margin: 10px; }
+    button { margin: 4px; padding: 6px 12px; background: #333; color: #eee; border: 1px solid #555; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>MPEG-2 4:2:2 Decoder Test</h2>
+  <div class="controls">
+    <button onclick="loadFile('vistek_test.ts')">4:2:0 test (vistek_test.ts)</button>
+    <button onclick="loadFile('vistek_test422.ts')">4:2:2 test (vistek_test422.ts)</button>
+    <button id="playBtn" onclick="togglePlay()" disabled>Play</button>
+    <button onclick="stepFrame()">Step</button>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="log"></div>
+
+  <script src="jsmpeg-dev.js"></script>
+  <script>
+    var log = document.getElementById('log');
+    var playBtn = document.getElementById('playBtn');
+    var frameCount = 0;
+    function addLog(msg) {
+      if (frameCount < 30 || frameCount % 25 === 0) {
+        log.innerHTML += msg + '<br>';
+        if (log.childNodes.length > 200) log.innerHTML = log.innerHTML.slice(log.innerHTML.indexOf('<br>') + 4);
+      }
+      console.log(msg);
+    }
+
+    var canvas = document.getElementById('c');
+    var player = null;
+
+    function loadFile(url) {
+      if (player) { player.destroy(); player = null; }
+      log.innerHTML = '';
+      frameCount = 0;
+      playBtn.disabled = true;
+      playBtn.textContent = 'Play';
+      player = new JSMpeg.Player(url, {
+        canvas: canvas,
+        disableWebAssembly: true,
+        autoplay: false,
+        loop: true,
+        onVideoDecode: function(decoder, elapsed) {
+          frameCount++;
+          addLog('frame ' + decoder.currentFrame +
+            ' type=' + decoder.pictureType +
+            ' isMPEG2=' + decoder.isMPEG2 +
+            ' chroma=' + decoder.chromaFormat +
+            ' ' + decoder.width + 'x' + decoder.height +
+            ' t=' + elapsed.toFixed(3) + 's');
+        }
+      });
+      addLog('Loaded ' + url + ' — press Play.');
+      playBtn.disabled = false;
+    }
+
+    function togglePlay() {
+      if (!player) return;
+      if (player.isPlaying) { player.pause(); playBtn.textContent = 'Play'; }
+      else { player.play(); playBtn.textContent = 'Pause'; }
+    }
+
+    function stepFrame() {
+      if (player && player.video) player.video.decode();
+    }
+
+    loadFile('vistek_test422.ts');
+  </script>
+</body>
+</html>

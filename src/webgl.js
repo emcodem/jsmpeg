@@ -111,9 +111,11 @@ WebGLRenderer.prototype.destroy = function() {
 	}
 };
 
-WebGLRenderer.prototype.resize = function(width, height) {
+WebGLRenderer.prototype.resize = function(width, height, chromaFormat) {
 	this.width = width|0;
 	this.height = height|0;
+	this.chromaFormat = chromaFormat || 1;
+	this.hasTextureData = {};
 
 	this.canvas.width = this.width;
 	this.canvas.height = this.height;
@@ -195,7 +197,7 @@ WebGLRenderer.prototype.render = function(y, cb, cr, isClampedArray) {
 	var w = ((this.width + 15) >> 4) << 4,
 		h = this.height,
 		w2 = w >> 1,
-		h2 = h >> 1;
+		h2 = this.chromaFormat === 2 ? h : h >> 1;
 
 	// In some browsers WebGL doesn't like Uint8ClampedArrays (this is a bug
 	// and should be fixed soon-ish), so we have to create a Uint8Array view 

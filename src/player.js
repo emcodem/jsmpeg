@@ -35,7 +35,7 @@ var Player = function(url, options) {
 	if (options.video !== false) {
 		this.video = options.wasmModule
 			? new JSMpeg.Decoder.MPEG1VideoWASM(options)
-			: new JSMpeg.Decoder.MPEG1Video(options);
+			: new JSMpeg.Decoder.MPEG2Video(options);
 
 		this.renderer = !options.disableGl && JSMpeg.Renderer.WebGL.IsSupported()
 			? new JSMpeg.Renderer.WebGL(options)

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MPEG-2 Test</title>
+  <style>
+    body { background: #111; color: #eee; font-family: monospace; text-align: center; }
+    canvas { display: block; margin: 20px auto; border: 1px solid #444; }
+    #log { text-align: left; max-width: 800px; margin: 0 auto; font-size: 12px; }
+    .controls { margin: 10px; }
+    button { margin: 4px; padding: 6px 12px; background: #333; color: #eee; border: 1px solid #555; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>MPEG-2 Decoder Test</h2>
+  <div class="controls">
+    <button id="playBtn" onclick="togglePlay()">Play</button>
+    <button onclick="stepFrame()">Step</button>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="log"></div>
+
+  <script src="jsmpeg-dev.js"></script>
+  <script>
+    var log = document.getElementById('log');
+    var playBtn = document.getElementById('playBtn');
+    function addLog(msg) {
+      log.innerHTML += msg + '<br>';
+      console.log(msg);
+    }
+
+    var canvas = document.getElementById('c');
+    var player = new JSMpeg.Player('vistek_test.ts', {
+      canvas: canvas,
+      disableWebAssembly: true,
+      autoplay: false,
+      loop: true,
+      onVideoDecode: function(decoder, elapsed) {
+        addLog('frame ' + decoder.currentFrame +
+          ' type=' + decoder.pictureType +
+          ' isMPEG2=' + decoder.isMPEG2 +
+          ' ' + decoder.width + 'x' + decoder.height +
+          ' t=' + elapsed.toFixed(3) + 's');
+      }
+    });
+    addLog('Player created — press Play.');
+
+    function togglePlay() {
+      if (player.isPlaying) { player.pause(); playBtn.textContent = 'Play'; }
+      else { player.play(); playBtn.textContent = 'Pause'; }
+    }
+
+    function stepFrame() {
+      if (player && player.video) player.video.decode();
+    }
+  </script>
+</body>
+</html>
